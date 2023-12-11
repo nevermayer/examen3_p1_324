@@ -1,0 +1,54 @@
+Todo pasa por flujo
+primero llega a *datos.inc.php (que es los datos que se necesitan en esa pantalla)
+luuego va *.inc.php (los datos a mostrar que mas antes se sacaron en *datos.inc.php)
+y finalmente cuando se hace siguiente (va por el motor) y ejecuta *.grabar.inc.php en el cual hace los cambios requeridos, dichos cambios se hacen en el motor (repito es la clave)
+
+Todo eso se repite hasta morir XD, repito hasta morir
+
+
+
+
+
+la primera vez que entra a flujo.php
+lo que le llega a flujo es una direccion con flujo y proceso
+Example:
+  http://localhost/flujoFinal/flujo.php?flujo=F1&proceso=P1
+
+en Flujo hace lo siguiente
+********************************************
+primero llama a conexion.inc.php
+
+luego se consulta el flujo y se obtiene la pantalla de ese flujo y proceso (lo que le llego)
+luego llama a esa pantalla *.datos.inc.php
+luego ya en el form (como ese form va al motor, entonces se enviar los datos, flujo-proceso y lo que se necesite)
+  llama a *.inc.php  (mostrando el contenido de ese archivo)
+
+    *AHORA CUANDO SE VA A ENVIAR AL MOTOR AGARRA DATOS IMPORTANTES COMO SER
+      *flujo
+      *proceso
+      *etc 
+      en este caso el envio 
+        http://localhost/flujoFinal/motor.php?pantalla=inicial&flujo=F1&proceso=P1&tipo=I&Siguiente=Siguiente
+
+    *Ahora llega al motor (ESTO ES IMPORTANTE) la clave
+      *recuperamos los datos con $_GET
+      * se llama a *.grabar.inc.php
+      (EN EL MOTOR SE EJECUTA EL *.grabar.inc.php) (aqui graba los datos, osea cuando hace siguiente va al motor y graba y luego va a otra pantallar)
+
+      ******
+      obtiene el siguiente flujo (si es siguiente o si es anterior) o si es condicionado,
+      luego prepara los paramteros, en este caso es
+
+      ?flujo=F1&proceso=P2
+      y  con esos parametros vuelve a flujo (eso es opcional ya que puede volver a bandeja si el proceso termina ahi, etc)
+
+      y eso se repite varias veces
+
+
+
+no esta funcionando para volver atras de una condicion
+
+
+
+
+

@@ -1,39 +1,171 @@
 <?php
-$link=mysqli_connect("localhost","root","","workflow"); 
-$flujo=$_GET["flujo"];
-$proceso=$_GET["proceso"];
-$procesosiguiente=$_GET["procesosiguiente"];
+include "conexion.inc.php";
+$flujo = $_POST["flujo"];
+$proceso = $_POST["proceso"];
+$pantalla = $_POST["pantalla"];
+$nro_tramite = $_POST['nro_tramite'];
+$tipo = $_POST['tipo'];
+$estado_para_ir_adelante = 1;
+// echo $flujo." ".$proceso." ".$nro_tramite. "<br/>";
 
-$pantalla=$_GET["pantalla"];
-include $pantalla.".back.inc.php";
 
-if (isset($_GET["Anterior"]))
-{
-  $resultado=mysqli_query($link, "select * from flujo where flujo='$flujo' and procesosiguiente='$proceso'");
-  $fila=mysqli_fetch_array($resultado);
-  $procesosiguiente=$fila["proceso"];
+$fecha_actual =  date('y-m-d h:i:s');
+// ahora hay que finalizar este proeso
+
+//tenermos que saber si fue adelante o atras
+// para eso si el flujo&proceso&nro_tramite ya existen entonces ignorar (no puede haber el mismo tramite varias veces)
+$sql="select count(*) as cantidad from flujotramite ";
+$sql.="where flujo='".$flujo."' and ";
+$sql.="proceso='".$proceso."' and ";
+$sql.="nro_tramite='".$nro_tramite."'";
+$resultado22 = mysqli_query($con, $sql);
+$fila22 = mysqli_fetch_array($resultado22);
+$cantidad22 = $fila22["cantidad"];
+
+
+// if($cantidad22 > 0){
+// 	$estado_para_ir_adelante = 0;
+// }
+
+
+
+if($estado_para_ir_adelante == 1){
+	$sql = "update flujotramite set ";
+	$sql.= " fechafin='".$fecha_actual."' ";
+	$sql.= " where ";
+	$sql.= " Flujo='".$flujo."' and proceso='".$proceso."' and nro_tramite='".$nro_tramite."' and fechafin is null ";
+	mysqli_query($con, $sql);
 }
-if (isset($_GET["pregunta"]))
+// echo $sql;
+
+// echo $tipo."<br/>";
+
+// echo "ucuario actual ".$_SESSION['usuario'];
+
+// echo "ESTA EN MOTOR FLUJO-PROCESO -> ".$flujo." ".$proceso." ".$nro_tramite." ".$pantalla." <br/>";
+// include "conexion.inc.php";
+include $pantalla.".grabar.inc.php";
+
+if (isset($_POST["Siguiente"]))
 {
-  $resultado=mysqli_query($link, "select * from flujopregunta where flujo='$flujo' and proceso='$proceso'");
-  
-  $fila=mysqli_fetch_array($resultado);
-  if ($_GET["pregunta"]=='si')
-  {
-    $procesosiguiente=$fila["si"];
-  }
-  else 
-  {
-    $procesosiguiente=$fila["no"];
-  }
+	echo "SIGUIENTES <br/>";
+	$sql="select flujo, proceso, proceso_siguiente as procesoselect, tipo, rol, pantalla ";
+	$sql.="from flujo ";
+	$sql.="where flujo='".$flujo."' and ";
+	$sql.="proceso='".$proceso."'";
+}
+if (isset($_POST["Anterior"]))
+{
+	$sql="select flujo, proceso as procesoselect, proceso_siguiente, tipo, rol, pantalla ";
+	$sql.="from flujo ";
+	$sql.="where flujo='".$flujo."' and ";
+	$sql.="proceso_siguiente='".$proceso."'";
 }
 
-if (isset($_GET["Anterior"]) && isset($_GET["pregunta"]))
+if (isset($_POST["Si"]))
 {
-  $resultado=mysqli_query($link, "select * from flujo where flujo='$flujo' and procesosiguiente='$proceso'");
-  $fila=mysqli_fetch_array($resultado);
-  $procesosiguiente=$fila["proceso"];
+	$sql="select flujo, procesoSI as procesoselect ";
+	$sql.="from flujocondicion ";
+	$sql.="where flujo='".$flujo."' and ";
+	$sql.="proceso='".$proceso."'";
 }
+if (isset($_POST["No"]))
+{
+	$sql="select flujo, procesoNO as procesoselect ";
+	$sql.="from flujocondicion ";
+	$sql.="where flujo='".$flujo."' and ";
+	$sql.="proceso='".$proceso."'";
+}
+// echo " hola que tal <br/>";
 
-header("Location: pantalla.php?flujo=$flujo&proceso=$procesosiguiente")
+// print_r($sql);
+$resultadoo=mysqli_query($con, $sql);
+// print_r($resultadoo);
+// echo "erro <br/>";
+$fila=mysqli_fetch_array($resultadoo);
+// print_r($fila);
+$proceso_select = $fila["procesoselect"];
+
+// if($proceso_select == ""){
+// 	// es condicionante
+// 	echo "mostar  ".$proceso." <br/>";
+// 	$sql="select flujo, proceso as procesoselect ";
+// 	$sql.="from flujocondicion ";
+// 	$sql.="where procesoSI='".$proceso."' or ";
+// 	$sql.="procesoNO='".$proceso."'";
+
+// 	echo $sql."<br/>";
+// }
+
+
+$proceso = $proceso_select;
+$parametros="?flujo=".$flujo;
+$parametros.="&proceso=".$proceso;
+$parametros.="&nro_tramite=".$nro_tramite;
+
+// calculando para el tipo
+$sql="select * from flujo ";
+$sql.="where flujo='".$flujo."' and ";
+$sql.="proceso='".$proceso."'";
+$resultado=mysqli_query($con, $sql);
+$fila=mysqli_fetch_array($resultado);
+
+echo "nuevo rol ".$fila['rol'];
+
+$parametros.="&tipo=".$fila['tipo'];
+
+
+echo "<br/>".$parametros."**** parametros <br/>";
+
+// adicionando nueva tarea
+
+$usuario_a_realizar_sig_tarea;
+
+echo "hay  que encontrar otro rol";
+// hay que buscar al otro usuario en este caso kardex
+$rol_tarea = $fila['rol'];
+// buscando el id de $fila['rol'] en rol
+$sql="select * from rol ";
+$sql.=" where descipcion='".$rol_tarea."' ";
+$result1=mysqli_query($con, $sql);
+$fila1 = mysqli_fetch_array($result1);
+
+$id_rol = $fila1['id'];
+echo "id rol ".$id_rol. "<br/>";
+// ahora hay que buscar que usuario puede hacer esa tarea en rolusuario
+$sql3="select * from rolusuario ";
+$sql3.=" where IdRol='".$id_rol."' ";
+$resultadofi3=mysqli_query($con, $sql3);
+$filafi3 = mysqli_fetch_array($resultadofi3);
+
+$id_usuario_tarea = $filafi3['IdUsuario'];
+
+echo "id usuario siguiente tarea ".$id_usuario_tarea. "<br/>";
+$sql4="select * from usuario ";
+$sql4.=" where id='".$id_usuario_tarea."' ";
+$resultado4=mysqli_query($con, $sql4);
+$fila4 = mysqli_fetch_array($resultado4);
+$usuario_a_realizar_sig_tarea = $fila4['descripcion'];
+
+	// ahora ubiacmos al kardista
+
+
+
+echo "usuario a realixar al siguient tarera ".$usuario_a_realizar_sig_tarea. "<br/>";
+$sql ="insert into flujotramite(Flujo, proceso, nro_tramite, fechaini, fechafin, usuario, usuario_tarea) ";
+$sql .= "values('".$flujo."', '".$proceso."','".$nro_tramite."', '".$fecha_actual."', NULL , '".$usuario_a_realizar_sig_tarea."','".$_SESSION['usuario']."'); ";
+// echo $sql;
+
+if($tipo != 'F' and $estado_para_ir_adelante == 1 and isset($proceso)){
+	mysqli_query($con, $sql);
+}
+// hay que controlar que el usuario sea el mismo or 
+if ( $proceso == "" or $tipo == 'F' or ($_SESSION['rol'] != $fila['rol'])){
+	header("Location: bentrada.php");
+}else{
+	// aqui hay que adicionar el nuevo proceso
+	header("Location: flujo.php".$parametros);
+}
 ?>
+
+
